@@ -86,14 +86,18 @@ const Checkout: React.FC = () => {
   }, []);
 
   const handlePayment = async () => {
-    // 실제 결제 처리 대신 주문 정보를 저장하고 장바구니를 비웁니다.
     try {
       const user = auth.currentUser;
       if (user) {
         // 주문 정보 저장
         await addDoc(collection(db, "orders"), {
           userId: user.uid,
-          items: cartItems,
+          items: cartItems.map((item) => ({
+            productId: item.id,
+            productName: item.productName,
+            quantity: item.quantity,
+            price: item.price,
+          })),
           totalAmount,
           orderDate: new Date(),
           status: "결제 완료",

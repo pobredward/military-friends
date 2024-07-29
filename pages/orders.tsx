@@ -48,7 +48,7 @@ const Orders: React.FC = () => {
       if (user) {
         const ordersQuery = query(
           collection(db, "orders"),
-          where("userId", "==", user.uid)
+          where("userId", "==", user.uid),
         );
         const querySnapshot = await getDocs(ordersQuery);
         const ordersData = querySnapshot.docs.map((doc) => ({
@@ -62,11 +62,6 @@ const Orders: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
-
-  const handleTrackOrder = (trackingNumber) => {
-    // 실제 배송 추적 서비스 연동
-    alert(`배송 추적 번호: ${trackingNumber}`);
-  };
 
   if (loading) {
     return <LoadingSpinner />;
@@ -84,7 +79,14 @@ const Orders: React.FC = () => {
               <strong>주문 번호:</strong> {order.id}
             </OrderItem>
             <OrderItem>
-              <strong>상품:</strong> {order.productName}
+              <strong>상품:</strong>
+              <ul>
+                {order.items.map((item, index) => (
+                  <li key={index}>
+                    {item.productName} - {item.quantity}개, {item.price}원
+                  </li>
+                ))}
+              </ul>
             </OrderItem>
             <OrderItem>
               <strong>결제 금액:</strong> {order.totalAmount}원
@@ -97,7 +99,9 @@ const Orders: React.FC = () => {
               <strong>배송 상태:</strong> {order.status}
             </OrderItem>
             {order.trackingNumber && (
-              <TrackingButton onClick={() => handleTrackOrder(order.trackingNumber)}>
+              <TrackingButton
+                onClick={() => handleTrackOrder(order.trackingNumber)}
+              >
                 배송 조회
               </TrackingButton>
             )}

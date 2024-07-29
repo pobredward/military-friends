@@ -1,74 +1,99 @@
 // pages/products/index.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
-import { useRouter } from "next/router";
-import { Product } from "../../models/Product";
+import Link from "next/link";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
-const products: Product[] = [
-  {
-    id: "1",
-    name: "밀리터리 크레아틴",
-    description: "근력 향상 보조제",
-    price: 30000,
-  },
-  {
-    id: "2",
-    name: "밀리터리 아르기닌",
-    description: "혈류 개선 보조제",
-    price: 25000,
-  },
-  {
-    id: "3",
-    name: "밀리터리 글루타민",
-    description: "면역력 강화 보조제",
-    price: 20000,
-  },
-];
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+`;
 
-const ProductList = styled.div`
+const Title = styled.h1`
+  color: ${(props) => props.theme.colors.greenPrimary};
+  text-align: center;
+  margin-bottom: 2rem;
+`;
+
+const ProductGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
 `;
 
 const ProductCard = styled.div`
   background-color: ${(props) => props.theme.colors.greenSecondary};
+  border-radius: 8px;
   padding: 1rem;
-  border-radius: 5px;
   text-align: center;
 `;
 
-const Button = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: ${(props) => props.theme.colors.greenPrimary};
-  color: white;
-  border: none;
+const ProductImage = styled.img`
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
   border-radius: 4px;
-  cursor: pointer;
-  margin-top: 1rem;
+  margin-bottom: 1rem;
 `;
 
-const ProductsPage: React.FC = () => {
-  const router = useRouter();
+const ProductName = styled.h3`
+  margin-bottom: 0.5rem;
+`;
 
-  const handlePurchase = (productId: string) => {
-    router.push(`/products/${productId}`);
-  };
+const ProductPrice = styled.p`
+  font-weight: bold;
+  color: ${(props) => props.theme.colors.greenPrimary};
+`;
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+}
+
+const ProductsPage: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const productsCollection = collection(db, "products");
+      const productsSnapshot = await getDocs(productsCollection);
+      const productsList = productsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Product[];
+      setProducts(productsList);
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <div>
-      <h1>제품 목록</h1>
-      <ProductList>
+    <Container>
+      <Title>제품 목록</Title>
+      <ProductGrid>
         {products.map((product) => (
-          <ProductCard key={product.id}>
-            <h2>{product.name}</h2>
-            <p>{product.description}</p>
-            <p>{product.price}원</p>
-            <Button onClick={() => handlePurchase(product.id)}>구매하기</Button>
-          </ProductCard>
+          <Link href={`/products/${product.id}`} key={product.id}>
+            <ProductCard>
+              <ProductImage src={product.imageUrl} alt={product.name} />
+              <ProductName>{product.name}</ProductName>
+              <ProductPrice>{product.price.toLocaleString()}원</ProductPrice>
+            </ProductCard>
+          </Link>
         ))}
-      </ProductList>
-    </div>
+      </ProductGrid>
+    </Container>
   );
 };
 
